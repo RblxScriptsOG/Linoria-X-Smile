@@ -5,7 +5,7 @@ local ThemeManager = {} do
 
 	ThemeManager.Library = nil
 	ThemeManager.BuiltInThemes = {
-		['Default'] 		= { 1, httpService:JSONDecode('{"FontColor":"ffffff","MainColor":"1c1c1c","AccentColor":"8C00FF","BackgroundColor":"141414","OutlineColor":"323232"}') },
+		['Default'] 		= { 1, httpService:JSONDecode('{"FontColor":"ffffff","MainColor":"1c1c1c","AccentColor":"0055ff","BackgroundColor":"141414","OutlineColor":"323232"}') },
 		['BBot'] 			= { 2, httpService:JSONDecode('{"FontColor":"ffffff","MainColor":"1e1e1e","AccentColor":"7e48a3","BackgroundColor":"232323","OutlineColor":"141414"}') },
 		['Fatality']		= { 3, httpService:JSONDecode('{"FontColor":"ffffff","MainColor":"1e1842","AccentColor":"c50754","BackgroundColor":"191335","OutlineColor":"3c355d"}') },
 		['Jester'] 			= { 4, httpService:JSONDecode('{"FontColor":"ffffff","MainColor":"242424","AccentColor":"db4467","BackgroundColor":"1c1c1c","OutlineColor":"373737"}') },
@@ -102,24 +102,21 @@ local ThemeManager = {} do
 		end)
 
 		groupbox:AddDivider()
-		groupbox:AddDropdown('ThemeManager_CustomThemeList', { Text = 'Custom themes', Values = self:ReloadCustomThemes(), AllowNull = true, Default = 1 })
 		groupbox:AddInput('ThemeManager_CustomThemeName', { Text = 'Custom theme name' })
+		groupbox:AddDropdown('ThemeManager_CustomThemeList', { Text = 'Custom themes', Values = self:ReloadCustomThemes(), AllowNull = true, Default = 1 })
+		groupbox:AddDivider()
+		
+		groupbox:AddButton('Save theme', function() 
+			self:SaveCustomTheme(Options.ThemeManager_CustomThemeName.Value)
 
-		groupbox:AddButton('Load custom theme', function() 
+			Options.ThemeManager_CustomThemeList:SetValues(self:ReloadCustomThemes())
+			Options.ThemeManager_CustomThemeList:SetValue(nil)
+		end):AddButton('Load theme', function() 
 			self:ApplyTheme(Options.ThemeManager_CustomThemeList.Value) 
 		end)
 
-		groupbox:AddButton('Save custom theme', function() 
-			self:SaveCustomTheme(Options.ThemeManager_CustomThemeName.Value)
-
-			Options.ThemeManager_CustomThemeList.Values = self:ReloadCustomThemes()
-			Options.ThemeManager_CustomThemeList:SetValues()
-			Options.ThemeManager_CustomThemeList:SetValue(nil)
-		end)
-
 		groupbox:AddButton('Refresh list', function()
-			Options.ThemeManager_CustomThemeList.Values = self:ReloadCustomThemes()
-			Options.ThemeManager_CustomThemeList:SetValues()
+			Options.ThemeManager_CustomThemeList:SetValues(self:ReloadCustomThemes())
 			Options.ThemeManager_CustomThemeList:SetValue(nil)
 		end)
 
@@ -249,4 +246,5 @@ local ThemeManager = {} do
 
 	ThemeManager:BuildFolderTree()
 end
+
 return ThemeManager
