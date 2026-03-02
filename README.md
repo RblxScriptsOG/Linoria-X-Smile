@@ -1,3 +1,5 @@
-# linoria-but-worse
-yes by yours truly
-creds go to og linoria devs i js modified it to my liking
+# Linoria X $mile
+
+All Credits goes to Linoria devs and [pilowie](https://github.com/wda2sick).
+
+#### i didn't even forked linoria i forked 'a fork of linoria' 😭
