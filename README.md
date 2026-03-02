@@ -2,4 +2,5 @@
 
 All Credits goes to Linoria devs and [pilowie](https://github.com/wda2sick).
 
-*i didn't even forked linoria i forked 'a fork of linoria' 😭*
+<sup><sub>
+i didn't even forked linoria i forked 'a fork of linoria' 😭</sub></sup>
