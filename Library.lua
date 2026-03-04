@@ -378,6 +378,98 @@ Library:GiveSignal(ScreenGui.DescendantRemoving:Connect(function(Instance)
     end;
 end))
 
+local _miniSg   = nil
+local _miniBtn  = nil
+local _miniShown = false
+
+local function _buildMiniSystem()
+    if _miniSg then return end
+
+    local sg = Instance.new('ScreenGui')
+    sg.Name           = 'LibMiniBtn'
+    sg.ResetOnSpawn   = false
+    sg.ZIndexBehavior = Enum.ZIndexBehavior.Global
+    ProtectGui(sg)
+    sg.Parent = CoreGui
+
+    local btn = Instance.new('TextButton')
+    btn.Name             = 'MiniCircle'
+    btn.Size             = UDim2.fromOffset(48, 48)
+    btn.Position         = UDim2.fromOffset(16, 200)
+    btn.BackgroundColor3 = Library.AccentColor
+    btn.Text             = '$'
+    btn.TextColor3       = Color3.new(1, 1, 1)
+    btn.TextScaled       = true
+    btn.Font             = Enum.Font.GothamBold
+    btn.BorderSizePixel  = 0
+    btn.ZIndex           = 120
+    btn.Visible          = false
+    btn.Parent           = sg
+
+    local corner = Instance.new('UICorner', btn)
+    corner.CornerRadius = UDim.new(1, 0)
+
+    local stroke = Instance.new('UIStroke', btn)
+    stroke.Color           = Library:GetDarkerColor(Library.AccentColor)
+    stroke.Thickness       = 2
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+    Library:AddToRegistry(btn,    { BackgroundColor3 = 'AccentColor' })
+    Library:AddToRegistry(stroke, { Color = 'AccentColorDark' })
+
+    local dragging   = false
+    local dragOffset = Vector2.zero
+    local didMove    = false
+
+    btn.InputBegan:Connect(function(inp)
+        if inp.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+        dragging   = true
+        didMove    = false
+        dragOffset = Vector2.new(
+            inp.Position.X - btn.AbsolutePosition.X,
+            inp.Position.Y - btn.AbsolutePosition.Y
+        )
+    end)
+
+    InputService.InputChanged:Connect(function(inp)
+        if not (dragging and inp.UserInputType == Enum.UserInputType.MouseMovement) then return end
+        didMove = true
+        local vp = workspace.CurrentCamera.ViewportSize
+        btn.Position = UDim2.fromOffset(
+            math.clamp(inp.Position.X - dragOffset.X, 0, vp.X - 48),
+            math.clamp(inp.Position.Y - dragOffset.Y, 0, vp.Y - 48)
+        )
+    end)
+
+    btn.InputEnded:Connect(function(inp)
+        if inp.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+        dragging = false
+        if not didMove then
+            btn.Visible  = false
+            _miniShown   = false
+            task.spawn(Library.Toggle)
+        end
+    end)
+
+    _miniSg  = sg
+    _miniBtn = btn
+end
+
+local function _showMini()
+    _buildMiniSystem()
+    _miniBtn.Visible = true
+    _miniShown       = true
+end
+
+local function _hideMiniAndToggle()
+    if _miniShown then return end
+    _showMini()
+    task.spawn(Library.Toggle)  
+end
+
+Library.ShowMiniButton  = _showMini
+Library.HideAndMinimize = _hideMiniAndToggle
+
 local BaseAddons = {};
 
 do
@@ -2794,6 +2886,37 @@ function Library:CreateWindow(...)
         ZIndex = 1;
         Parent = Inner;
     });
+
+    do
+        local MinBtn = Instance.new('TextButton')
+        MinBtn.Name             = 'MinimizeBtn'
+        MinBtn.Size             = UDim2.fromOffset(18, 18)
+        MinBtn.Position         = UDim2.new(1, -22, 0, 3)
+        MinBtn.AnchorPoint      = Vector2.new(0, 0)
+        MinBtn.BackgroundColor3 = Library.AccentColor
+        MinBtn.Text             = '$'
+        MinBtn.TextColor3       = Color3.new(1, 1, 1)
+        MinBtn.TextScaled       = true
+        MinBtn.Font             = Enum.Font.GothamBold
+        MinBtn.BorderSizePixel  = 0
+        MinBtn.ZIndex           = 10
+        MinBtn.Parent           = Inner
+
+        Instance.new('UICorner', MinBtn).CornerRadius = UDim.new(1, 0)
+
+        Library:AddToRegistry(MinBtn, { BackgroundColor3 = 'AccentColor' })
+
+        MinBtn.MouseEnter:Connect(function()
+            MinBtn.BackgroundColor3 = Library:GetDarkerColor(Library.AccentColor)
+        end)
+        MinBtn.MouseLeave:Connect(function()
+            MinBtn.BackgroundColor3 = Library.AccentColor
+        end)
+
+        MinBtn.Activated:Connect(function()
+            _hideMiniAndToggle()
+        end)
+    end
 
     local MainSectionOuter = Library:Create('Frame', {
         BackgroundColor3 = Library.BackgroundColor;
