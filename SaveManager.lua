@@ -211,7 +211,6 @@ local SaveManager = {} do
 							ua_equipped[weaponName][ctype] = clone
 						end
 					else
-						-- fallback: store raw data if cloneCosmetic not available
 						ua_equipped[weaponName][ctype] = dat
 					end
 				end
@@ -236,17 +235,24 @@ local SaveManager = {} do
 		return out
 	end
 
-	function SaveManager:BuildConfigSection(tab)
+	function SaveManager:BuildConfigSection(tabOrGroupbox)
 		assert(self.Library, 'SaveManager: call SetLibrary before BuildConfigSection')
 
-		local section = tab:AddRightGroupbox('Gameplay Configs')
+		local section
+		if type(tabOrGroupbox.AddLeftGroupbox) == 'function' then
+			section = tabOrGroupbox:AddLeftGroupbox('Gameplay Configs')
+		elseif type(tabOrGroupbox.AddInput) == 'function' then
+			section = tabOrGroupbox
+		else
+			error('BuildConfigSection: expected a Tab or Groupbox')
+		end
 
 		section:AddInput('SaveManager_ConfigName',    { Text = 'Config name' })
 		section:AddDropdown('SaveManager_ConfigList', { Text = 'Config list', Values = self:RefreshConfigList(), AllowNull = true })
 
 		section:AddDivider()
 
-		section:AddButton('Create', function()
+		section:AddButton({ Text = 'Create', Func = function()
 			local name = Options.SaveManager_ConfigName.Value
 			if name:gsub(' ', '') == '' then return self.Library:Notify('[SmileHub] Name cannot be empty', 2) end
 			local ok, err = self:Save(name)
@@ -254,21 +260,21 @@ local SaveManager = {} do
 			self.Library:Notify(string.format('[SmileHub] Created %q', name))
 			Options.SaveManager_ConfigList:SetValues(self:RefreshConfigList())
 			Options.SaveManager_ConfigList:SetValue(nil)
-		end):AddButton('Load', function()
+		end }):AddButton({ Text = 'Load', Func = function()
 			local name = Options.SaveManager_ConfigList.Value
 			if not name then return self.Library:Notify('[SmileHub] No config selected', 2) end
 			local ok, err = self:Load(name)
 			if not ok then return self.Library:Notify('[SmileHub] Load failed: ' .. err) end
 			self.Library:Notify(string.format('[SmileHub] Loaded %q', name))
-		end)
+		end })
 
-		section:AddButton('Overwrite', function()
+		section:AddButton({ Text = 'Overwrite', Func = function()
 			local name = Options.SaveManager_ConfigList.Value
 			if not name then return self.Library:Notify('[SmileHub] No config selected', 2) end
 			local ok, err = self:Save(name)
 			if not ok then return self.Library:Notify('[SmileHub] Overwrite failed: ' .. err) end
 			self.Library:Notify(string.format('[SmileHub] Overwrote %q', name))
-		end):AddButton('Delete', function()
+		end }):AddButton({ Text = 'Delete', Func = function()
 			local name = Options.SaveManager_ConfigList.Value
 			if not name then return self.Library:Notify('[SmileHub] No config selected', 2) end
 			local path = 'Smile Hub/Rivals/settings/' .. name .. '.json'
@@ -278,18 +284,18 @@ local SaveManager = {} do
 				Options.SaveManager_ConfigList:SetValues(self:RefreshConfigList())
 				Options.SaveManager_ConfigList:SetValue(nil)
 			end
-		end)
+		end })
 
-		section:AddButton('Refresh list', function()
+		section:AddButton({ Text = 'Refresh list', Func = function()
 			Options.SaveManager_ConfigList:SetValues(self:RefreshConfigList())
 			Options.SaveManager_ConfigList:SetValue(nil)
-		end):AddButton('Set as autoload', function()
+		end }):AddButton({ Text = 'Set as autoload', Func = function()
 			local name = Options.SaveManager_ConfigList.Value
 			if not name then return self.Library:Notify('[SmileHub] No config selected', 2) end
 			writefile('Smile Hub/Rivals/settings/autoload.txt', name)
 			if SaveManager.AutoloadLabel then SaveManager.AutoloadLabel:SetText('Autoload: ' .. name) end
 			self.Library:Notify(string.format('[SmileHub] Autoload -> %q', name))
-		end)
+		end })
 
 		local autoName = 'none'
 		if isfile and isfile('Smile Hub/Rivals/settings/autoload.txt') then
@@ -299,18 +305,23 @@ local SaveManager = {} do
 
 		self:SetIgnoreIndexes({ 'SaveManager_ConfigList', 'SaveManager_ConfigName' })
 	end
-	
+
 	function SaveManager:BuildUnlockAllSection(tab, getEquipped, getFavorites, setEquipped, setFavorites, cloneCosmetic, onLoad)
 		assert(self.Library, 'SaveManager: call SetLibrary before BuildUnlockAllSection')
 
-		local section = tab:AddLeftGroupbox('Unlock All / Skin Profiles')
+		local section
+		if type(tab.AddLeftGroupbox) == 'function' then
+			section = tab:AddLeftGroupbox('Unlock All / Skin Profiles')
+		else
+			section = tab
+		end
 
 		section:AddInput('UAManager_ConfigName',    { Text = 'Profile name' })
 		section:AddDropdown('UAManager_ConfigList', { Text = 'Saved profiles', Values = self:RefreshUnlockAllList(), AllowNull = true })
 
 		section:AddDivider()
 
-		section:AddButton('Save profile', function()
+		section:AddButton({ Text = 'Save profile', Func = function()
 			local name = Options.UAManager_ConfigName.Value
 			if name:gsub(' ', '') == '' then return self.Library:Notify('[SmileHub] Profile name cannot be empty', 2) end
 			local ok, err = self:SaveUnlockAll(name, getEquipped(), getFavorites())
@@ -318,7 +329,7 @@ local SaveManager = {} do
 			self.Library:Notify(string.format('[SmileHub] UA profile %q saved', name))
 			Options.UAManager_ConfigList:SetValues(self:RefreshUnlockAllList())
 			Options.UAManager_ConfigList:SetValue(nil)
-		end):AddButton('Load profile', function()
+		end }):AddButton({ Text = 'Load profile', Func = function()
 			local name = Options.UAManager_ConfigList.Value
 			if not name then return self.Library:Notify('[SmileHub] No profile selected', 2) end
 			local ok, equipped, favorites = self:LoadUnlockAll(name, cloneCosmetic)
@@ -327,15 +338,15 @@ local SaveManager = {} do
 			setFavorites(favorites)
 			if onLoad then pcall(onLoad) end
 			self.Library:Notify(string.format('[SmileHub] UA profile %q loaded', name))
-		end)
+		end })
 
-		section:AddButton('Overwrite profile', function()
+		section:AddButton({ Text = 'Overwrite profile', Func = function()
 			local name = Options.UAManager_ConfigList.Value
 			if not name then return self.Library:Notify('[SmileHub] No profile selected', 2) end
 			local ok, err = self:SaveUnlockAll(name, getEquipped(), getFavorites())
 			if not ok then return self.Library:Notify('[SmileHub] UA overwrite failed: ' .. err) end
 			self.Library:Notify(string.format('[SmileHub] UA profile %q overwritten', name))
-		end):AddButton('Delete profile', function()
+		end }):AddButton({ Text = 'Delete profile', Func = function()
 			local name = Options.UAManager_ConfigList.Value
 			if not name then return self.Library:Notify('[SmileHub] No profile selected', 2) end
 			local path = 'Smile Hub/Rivals/UnlockAll/' .. name .. '.json'
@@ -345,12 +356,12 @@ local SaveManager = {} do
 				Options.UAManager_ConfigList:SetValues(self:RefreshUnlockAllList())
 				Options.UAManager_ConfigList:SetValue(nil)
 			end
-		end)
+		end })
 
-		section:AddButton('Refresh profiles', function()
+		section:AddButton({ Text = 'Refresh profiles', Func = function()
 			Options.UAManager_ConfigList:SetValues(self:RefreshUnlockAllList())
 			Options.UAManager_ConfigList:SetValue(nil)
-		end)
+		end })
 
 		section:AddLabel('Saves all equipped skins, wraps,')
 		section:AddLabel('charms, camos & favorited items.')
@@ -359,7 +370,6 @@ local SaveManager = {} do
 		self:SetIgnoreIndexes({ 'UAManager_ConfigList', 'UAManager_ConfigName' })
 	end
 
-	-- ── INIT ──────────────────────────────────────────────
 	SaveManager:BuildFolderTree()
 end
 
