@@ -18,9 +18,6 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
 ScreenGui.IgnoreGuiInset = true
 ScreenGui.Parent = CoreGui
 
--- ─────────────────────────────────────────────
---  Device detection & scaling
--- ─────────────────────────────────────────────
 local IsMobile = InputService.TouchEnabled
     and not InputService.KeyboardEnabled
     and not InputService.MouseEnabled
@@ -39,17 +36,11 @@ local function S(v)
     return v
 end
 
--- ─────────────────────────────────────────────
---  Globals
--- ─────────────────────────────────────────────
 local Toggles = {}
 local Options = {}
 getgenv().Toggles = Toggles
 getgenv().Options = Options
 
--- ─────────────────────────────────────────────
---  Library core
--- ─────────────────────────────────────────────
 local Library = {
     Registry        = {};
     RegistryMap     = {};
@@ -70,7 +61,6 @@ local Library = {
     Scale           = SCALE;
 }
 
--- rainbow
 do
     local step, hue = 0, 0
     table.insert(Library.Signals, RenderStepped:Connect(function(dt)
@@ -84,9 +74,6 @@ do
     end))
 end
 
--- ─────────────────────────────────────────────
---  Helpers
--- ─────────────────────────────────────────────
 local function GetPlayersString()
     local t = {}
     for _, p in ipairs(Players:GetPlayers()) do t[#t+1] = p.Name end
@@ -136,7 +123,6 @@ function Library:CreateLabel(Props, IsHud)
     return Library:Create(inst, p2)
 end
 
--- unified input position (works for both mouse and touch)
 function Library:CursorPos()
     if IsMobile then
         local loc = InputService:GetMouseLocation()
@@ -241,9 +227,6 @@ Library:GiveSignal(ScreenGui.DescendantRemoving:Connect(function(inst)
     if Library.RegistryMap[inst] then Library:RemoveFromRegistry(inst) end
 end))
 
--- ─────────────────────────────────────────────
---  Draggable
--- ─────────────────────────────────────────────
 function Library:MakeDraggable(Frame, Cutoff)
     local cutY = Cutoff or S(40)
     Frame.Active = true
@@ -277,9 +260,6 @@ function Library:MakeDraggable(Frame, Cutoff)
     end)
 end
 
--- ─────────────────────────────────────────────
---  Tooltip
--- ─────────────────────────────────────────────
 function Library:AddToolTip(InfoStr, HoverInstance)
     local tw, th = Library:GetTextBounds(InfoStr, Library.Font, S(14))
     local tip = Library:Create('Frame', {
@@ -328,9 +308,6 @@ function Library:AddToolTip(InfoStr, HoverInstance)
     end
 end
 
--- ─────────────────────────────────────────────
---  Highlight
--- ─────────────────────────────────────────────
 function Library:OnHighlight(HoverInst, TargetInst, OnProps, OffProps)
     local function apply(props)
         local reg = Library.RegistryMap[TargetInst]
@@ -353,9 +330,6 @@ function Library:OnHighlight(HoverInst, TargetInst, OnProps, OffProps)
     end
 end
 
--- ─────────────────────────────────────────────
---  Shared touch/mouse drag helper
--- ─────────────────────────────────────────────
 local function HandleDrag(Frame, onMove, onEnd)
     Frame.InputBegan:Connect(function(Input)
         if not Library:IsPointerInput(Input) then return end
@@ -378,9 +352,6 @@ local function HandleDrag(Frame, onMove, onEnd)
     end)
 end
 
--- ─────────────────────────────────────────────
---  Notification & watermark area
--- ─────────────────────────────────────────────
 do
     Library.NotificationArea = Library:Create('Frame', {
         BackgroundTransparency = 1;
@@ -396,7 +367,6 @@ do
         Parent            = Library.NotificationArea;
     })
 
-    -- Watermark
     local WMOuter = Library:Create('Frame', {
         BorderColor3 = Color3.new(0,0,0);
         Position     = UDim2.fromOffset(S(1000), -S(25));
@@ -440,7 +410,6 @@ do
     Library.WatermarkText = WMLabel
     Library:MakeDraggable(WMOuter)
 
-    -- Keybind list
     local KBOuter = Library:Create('Frame', {
         AnchorPoint  = Vector2.new(0, 0.5);
         BorderColor3 = Color3.new(0,0,0);
@@ -538,18 +507,12 @@ function Library:SetAccentColor(Color)
     Library:UpdateColorsUsingRegistry()
 end
 
--- ─────────────────────────────────────────────
---  BaseAddons  (ColorPicker, KeyPicker)
--- ─────────────────────────────────────────────
 local BaseAddons  = {}
 local BaseGroupbox = {}
 
-do -- BaseAddons
+do
     local Funcs = {}
 
-    -------------------------
-    --  ColorPicker
-    -------------------------
     function Funcs:AddColorPicker(Idx, Info)
         assert(Info.Default, 'AddColorPicker: Missing default value.')
         local TL = self.TextLabel
@@ -565,7 +528,6 @@ do -- BaseAddons
         local function RGB2HSV(c) local h,s,v = Color3.toHSV(c); CP.Hue = h; CP.Sat = s; CP.Vib = v end
         RGB2HSV(CP.Value)
 
-        -- display swatch
         local DispW, DispH = S(28), S(14)
         local Swatch = Library:Create('Frame', {
             BackgroundColor3 = CP.Value;
@@ -579,7 +541,6 @@ do -- BaseAddons
             Library:Create('ImageLabel', { BorderSizePixel = 0; Size = UDim2.new(0, DispW-1, 0, DispH-1); ZIndex = 5; Image = 'rbxassetid://12977615774'; Parent = Swatch })
         end
 
-        -- picker frame
         local pickerW = S(230)
         local pickerH = Info.Transparency and S(271) or S(253)
         local mapSz   = S(200)
@@ -594,14 +555,11 @@ do -- BaseAddons
         Swatch:GetPropertyChangedSignal('AbsolutePosition'):Connect(UpdatePickerPos)
         UpdatePickerPos()
 
-        -- accent bar
         local AccBar = Library:Create('Frame', { BackgroundColor3 = Library.AccentColor; BorderSizePixel = 0; Size = UDim2.new(1,0,0,2); ZIndex = 17; Parent = PFInner })
         Library:AddToRegistry(AccBar, { BackgroundColor3 = 'AccentColor' })
 
-        -- title
         Library:CreateLabel({ Size = UDim2.new(1,0,0,S(14)); Position = UDim2.fromOffset(S(5), S(4)); TextSize = S(13); Text = CP.Title; TextXAlignment = Enum.TextXAlignment.Left; TextWrapped = false; ZIndex = 17; Parent = PFInner })
 
-        -- sat/vib map
         local SVOuter = Library:Create('Frame', { BorderColor3 = Color3.new(0,0,0); Position = UDim2.new(0, S(4), 0, S(24)); Size = UDim2.fromOffset(mapSz, mapSz); ZIndex = 17; Parent = PFInner })
         local SVInner = Library:Create('Frame', { BackgroundColor3 = Library.BackgroundColor; BorderColor3 = Library.OutlineColor; BorderMode = Enum.BorderMode.Inset; Size = UDim2.new(1,0,1,0); ZIndex = 18; Parent = SVOuter })
         local SVMap   = Library:Create('ImageLabel', { BorderSizePixel = 0; Size = UDim2.new(1,0,1,0); ZIndex = 18; Image = 'rbxassetid://4155801252'; Parent = SVInner })
@@ -610,14 +568,12 @@ do -- BaseAddons
         local CurOut = Library:Create('ImageLabel', { AnchorPoint = Vector2.new(0.5,0.5); Size = UDim2.fromOffset(S(6),S(6)); BackgroundTransparency=1; Image='rbxassetid://9619665977'; ImageColor3=Color3.new(0,0,0); ZIndex=19; Parent=SVMap })
         Library:Create('ImageLabel', { Size=UDim2.fromOffset(S(4),S(4)); Position=UDim2.fromOffset(1,1); BackgroundTransparency=1; Image='rbxassetid://9619665977'; ZIndex=20; Parent=CurOut })
 
-        -- hue bar
         local HUOuter = Library:Create('Frame', { BorderColor3 = Color3.new(0,0,0); Position = UDim2.new(0, S(208), 0, S(24)); Size = UDim2.fromOffset(S(15), mapSz); ZIndex = 17; Parent = PFInner })
         local HUInner = Library:Create('Frame', { BackgroundColor3 = Color3.new(1,1,1); BorderSizePixel = 0; Size = UDim2.new(1,0,1,0); ZIndex = 18; Parent = HUOuter })
         local hueSKP  = {}
         for i = 0, 1, 0.1 do table.insert(hueSKP, ColorSequenceKeypoint.new(math.min(i,1), Color3.fromHSV(i,1,1))) end
         Library:Create('UIGradient', { Color = ColorSequence.new(hueSKP); Rotation = 90; Parent = HUInner })
 
-        -- hex box
         local HexOuter = Library:Create('Frame', { BorderColor3 = Color3.new(0,0,0); Position = UDim2.new(0, S(4), 0, S(228)); Size = UDim2.new(0.5, -S(6), 0, S(20)); ZIndex = 18; Parent = PFInner })
         local HexInner = Library:Create('Frame', { BackgroundColor3 = Library.MainColor; BorderColor3 = Library.OutlineColor; BorderMode = Enum.BorderMode.Inset; Size = UDim2.new(1,0,1,0); ZIndex = 18; Parent = HexOuter })
         Library:Create('UIGradient', { Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.new(1,1,1)), ColorSequenceKeypoint.new(1, Color3.fromRGB(212,212,212)) }); Rotation = 90; Parent = HexInner })
@@ -625,7 +581,6 @@ do -- BaseAddons
         Library:AddToRegistry(HexInner, { BackgroundColor3 = 'MainColor'; BorderColor3 = 'OutlineColor' })
         Library:AddToRegistry(HexBox,   { TextColor3 = 'FontColor' })
 
-        -- rgb box
         local RgbOuter = Library:Create('Frame', { BorderColor3 = Color3.new(0,0,0); Position = UDim2.new(0.5, S(2), 0, S(228)); Size = UDim2.new(0.5, -S(6), 0, S(20)); ZIndex = 18; Parent = PFInner })
         local RgbInner = Library:Create('Frame', { BackgroundColor3 = Library.MainColor; BorderColor3 = Library.OutlineColor; BorderMode = Enum.BorderMode.Inset; Size = UDim2.new(1,0,1,0); ZIndex = 18; Parent = RgbOuter })
         Library:Create('UIGradient', { Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.new(1,1,1)), ColorSequenceKeypoint.new(1, Color3.fromRGB(212,212,212)) }); Rotation = 90; Parent = RgbInner })
@@ -633,7 +588,6 @@ do -- BaseAddons
         Library:AddToRegistry(RgbInner, { BackgroundColor3 = 'MainColor'; BorderColor3 = 'OutlineColor' })
         Library:AddToRegistry(RgbBox,   { TextColor3 = 'FontColor' })
 
-        -- transparency bar
         local TransInner
         if Info.Transparency then
             local TransOuter = Library:Create('Frame', { BorderColor3 = Color3.new(0,0,0); Position = UDim2.fromOffset(S(4), S(251)); Size = UDim2.new(1, -S(8), 0, S(14)); ZIndex = 19; Parent = PFInner })
@@ -642,7 +596,6 @@ do -- BaseAddons
             Library:Create('ImageLabel', { BackgroundTransparency=1; Size=UDim2.new(1,0,1,0); Image='rbxassetid://12978095818'; ZIndex=20; Parent=TransInner })
         end
 
-        -- Display / Update
         function CP:Display()
             CP.Value = Color3.fromHSV(CP.Hue, CP.Sat, CP.Vib)
             SVMap.BackgroundColor3 = Color3.fromHSV(CP.Hue, 1, 1)
@@ -679,7 +632,6 @@ do -- BaseAddons
         end
         function CP:OnChanged(fn) CP.Changed = fn; fn(CP.Value) end
 
-        -- sat/vib drag
         HandleDrag(SVMap, function(x,y)
             local ap, as = SVMap.AbsolutePosition, SVMap.AbsoluteSize
             CP.Sat = math.clamp((x - ap.X) / as.X, 0, 1)
@@ -687,14 +639,12 @@ do -- BaseAddons
             CP:Display()
         end, function() Library:AttemptSave() end)
 
-        -- hue drag
         HandleDrag(HUInner, function(x,y)
             local ap, as = HUInner.AbsolutePosition, HUInner.AbsoluteSize
             CP.Hue = math.clamp((y - ap.Y) / as.Y, 0, 1)
             CP:Display()
         end, function() Library:AttemptSave() end)
 
-        -- transparency drag
         if TransInner then
             HandleDrag(TransInner, function(x,y)
                 local ap, as = TransInner.AbsolutePosition, TransInner.AbsoluteSize
@@ -703,7 +653,6 @@ do -- BaseAddons
             end, function() Library:AttemptSave() end)
         end
 
-        -- hex / rgb input
         HexBox.FocusLost:Connect(function(enter)
             if enter then
                 local ok, c = pcall(Color3.fromHex, HexBox.Text)
@@ -719,7 +668,6 @@ do -- BaseAddons
             CP:Display()
         end)
 
-        -- open/close swatch click
         Swatch.InputBegan:Connect(function(Input)
             if not Library:IsPointerInput(Input) then return end
             if Library:MouseIsOverOpenedFrame() then return end
@@ -727,7 +675,6 @@ do -- BaseAddons
             if PFOuter.Visible then CP:Hide() else CP:Show() end
         end)
 
-        -- close on outside click
         Library:GiveSignal(InputService.InputBegan:Connect(function(Input)
             if not Library:IsPointerInput(Input) then return end
             local px = IsMobile and Input.Position.X or Mouse.X
@@ -744,9 +691,6 @@ do -- BaseAddons
         return self
     end
 
-    -------------------------
-    --  KeyPicker
-    -------------------------
     function Funcs:AddKeyPicker(Idx, Info)
         local ParentObj = self
         local TL        = self.TextLabel
@@ -768,7 +712,6 @@ do -- BaseAddons
         Library:AddToRegistry(PickIn, { BackgroundColor3 = 'BackgroundColor'; BorderColor3 = 'OutlineColor' })
         local DispLabel = Library:CreateLabel({ Size = UDim2.new(1,0,1,0); TextSize = S(12); Text = Info.Default; TextWrapped = true; ZIndex = 8; Parent = PickIn })
 
-        -- mode select popup
         local Modes = IsMobile and { 'Toggle', 'Hold' } or (Info.Modes or { 'Always', 'Toggle', 'Hold' })
         local ModeOut = Library:Create('Frame', {
             BorderColor3 = Color3.new(0,0,0);
@@ -787,7 +730,6 @@ do -- BaseAddons
         TL:GetPropertyChangedSignal('AbsolutePosition'):Connect(UpdateModePos)
         UpdateModePos()
 
-        -- keybind HUD label
         local HudLabel = Library:CreateLabel({ TextXAlignment = Enum.TextXAlignment.Left; Size = UDim2.new(1,0,0,S(18)); TextSize = S(12); Visible = false; ZIndex = 110; Parent = Library.KeybindContainer }, true)
 
         local ModeButtons = {}
@@ -819,7 +761,6 @@ do -- BaseAddons
             HudLabel.Visible = true
             HudLabel.TextColor3 = state and Library.AccentColor or Library.FontColor
             Library.RegistryMap[HudLabel].Properties.TextColor3 = state and 'AccentColor' or 'FontColor'
-            -- resize keybind frame
             local ys, xs = 0, 0
             for _, ch in ipairs(Library.KeybindContainer:GetChildren()) do
                 if ch:IsA('TextLabel') and ch.Visible then
@@ -921,9 +862,6 @@ do -- BaseAddons
     BaseAddons.__namecall  = function(t, k, ...) return Funcs[k](...) end
 end
 
--- ─────────────────────────────────────────────
---  BaseGroupbox  (all widget types)
--- ─────────────────────────────────────────────
 do
     local Funcs = {}
 
@@ -1361,7 +1299,6 @@ do
 
         DD:SetValues()
 
-        -- set defaults
         local defaults = {}
         if type(Info.Default) == 'string' then
             local i = table.find(DD.Values, Info.Default); if i then defaults[#defaults+1] = i end
@@ -1415,9 +1352,6 @@ do
     BaseGroupbox.__namecall = function(t, k, ...) return Funcs[k](...) end
 end
 
--- ─────────────────────────────────────────────
---  CreateWindow
--- ─────────────────────────────────────────────
 function Library:CreateWindow(...)
     local args   = { ... }
     local Config = type(args[1]) == 'table' and args[1] or { Title=args[1]; AutoShow=args[2] }
@@ -1523,7 +1457,6 @@ function Library:CreateWindow(...)
 
     function Window:SetWindowTitle(t) TitleLabel.Text = t end
 
-    -- ────── AddTab ──────
     function Window:AddTab(Name)
         local Tab = { Groupboxes={}; Tabboxes={} }
 
@@ -1536,7 +1469,6 @@ function Library:CreateWindow(...)
 
         local TFrame = Library:Create('Frame', { Name='TabFrame'; BackgroundTransparency=1; Size=UDim2.new(1,0,1,0); Visible=false; ZIndex=2; Parent=TabContainer })
 
-        -- left / right scrolling columns
         local function MakeSide(xScale, xOffset)
             local sf = Library:Create('ScrollingFrame', {
                 BackgroundTransparency = 1;
@@ -1572,7 +1504,6 @@ function Library:CreateWindow(...)
         end
         function Tab:SetLayoutOrder(p) TBtn.LayoutOrder = p; TabLayout:ApplyLayout() end
 
-        -- ── AddGroupbox ──
         function Tab:AddGroupbox(Info2)
             local GB = {}
             local BOut = Library:Create('Frame', { BackgroundColor3=Library.BackgroundColor; BorderColor3=Library.OutlineColor; BorderMode=Enum.BorderMode.Inset; Size=UDim2.new(1,0,0,S(40)); ZIndex=2; Parent=Info2.Side==1 and LeftSide or RightSide })
@@ -1599,7 +1530,6 @@ function Library:CreateWindow(...)
         function Tab:AddLeftGroupbox(n)  return Tab:AddGroupbox({ Side=1; Name=n }) end
         function Tab:AddRightGroupbox(n) return Tab:AddGroupbox({ Side=2; Name=n }) end
 
-        -- ── AddTabbox (tabbox inside a column) ──
         function Tab:AddTabbox(Info2)
             local Tabbox = { Tabs={} }
             local BOut = Library:Create('Frame', { BackgroundColor3=Library.BackgroundColor; BorderColor3=Library.OutlineColor; BorderMode=Enum.BorderMode.Inset; Size=UDim2.new(1,0,0,0); ZIndex=2; Parent=Info2.Side==1 and LeftSide or RightSide })
@@ -1633,7 +1563,6 @@ function Library:CreateWindow(...)
                     Cont.Visible = false; Underline.Visible = false
                 end
                 function TBTab:Resize()
-                    -- re-proportion buttons
                     local n = 0
                     for _ in next, Tabbox.Tabs do n = n+1 end
                     for _, ch in ipairs(TabBtns:GetChildren()) do
@@ -1658,7 +1587,6 @@ function Library:CreateWindow(...)
                 setmetatable(TBTab, BaseGroupbox)
                 TBTab:AddBlank(3)
                 TBTab:Resize()
-                -- auto-show first
                 if BtnCount == 1 then TBTab:Show() end
                 return TBTab
             end
@@ -1669,10 +1597,6 @@ function Library:CreateWindow(...)
         function Tab:AddLeftTabbox(n)  return Tab:AddTabbox({ Name=n; Side=1 }) end
         function Tab:AddRightTabbox(n) return Tab:AddTabbox({ Name=n; Side=2 }) end
 
-        -- ── Nested sub-tabs inside a tab (full-width) ──
-        -- Usage:  local subTabs = MainTab:AddSubTabs()
-        --         local sub1 = subTabs:AddTab('Aimbot')
-        --         sub1:AddLeftGroupbox(...)
         function Tab:AddSubTabs()
             local SubTabSystem = { Tabs={} }
 
@@ -1689,8 +1613,6 @@ function Library:CreateWindow(...)
                 Parent        = SubArea;
             })
 
-            -- reuse left/right but offset them below the sub-tab bar
-            -- we create a NEW pair of columns that sit below SubArea
             local function MakeSubSide(xScale, xOffset)
                 local sf = Library:Create('ScrollingFrame', {
                     BackgroundTransparency = 1;
@@ -1716,7 +1638,6 @@ function Library:CreateWindow(...)
                 return sf
             end
 
-            -- hide the original columns while sub-tabs exist
             LeftSide.Visible  = false
             RightSide.Visible = false
 
@@ -1770,7 +1691,6 @@ function Library:CreateWindow(...)
                 function ST:AddLeftGroupbox(n)  return ST:AddGroupbox({ Side=1; Name=n }) end
                 function ST:AddRightGroupbox(n) return ST:AddGroupbox({ Side=2; Name=n }) end
 
-                -- tabbox inside sub-tab
                 function ST:AddTabbox(Info3)
                     local Tabbox2 = { Tabs={} }
                     local BOut = Library:Create('Frame', { BackgroundColor3=Library.BackgroundColor; BorderColor3=Library.OutlineColor; BorderMode=Enum.BorderMode.Inset; Size=UDim2.new(1,0,0,0); ZIndex=2; Parent=Info3.Side==1 and STLeft or STRight })
@@ -1822,7 +1742,6 @@ function Library:CreateWindow(...)
                 end)
 
                 SubTabSystem.Tabs[SubName] = ST
-                -- auto-show first
                 local count = 0; for _ in next, SubTabSystem.Tabs do count=count+1 end
                 if count == 1 then ST:ShowTab() end
                 return ST
@@ -1841,7 +1760,6 @@ function Library:CreateWindow(...)
         return Tab
     end
 
-    -- ── modal / blur / toggle ──
     local Modal = Library:Create('TextButton', { BackgroundTransparency=1; Size=UDim2.new(0,0,0,0); Text=''; Modal=false; Parent=ScreenGui })
     local MenuBlur = Library:Create('BlurEffect', { Name='LibMenuBlur'; Size=0; Parent=Lighting })
     Library.MenuBlur = MenuBlur
@@ -1851,7 +1769,6 @@ function Library:CreateWindow(...)
         Modal.Modal   = Outer.Visible
         if not IsMobile then
             MenuBlur.Size = Outer.Visible and 24 or 0
-            -- custom cursor
             local ok, Drawing = pcall(function() return Drawing end)
             if ok and Drawing then
                 local Cursor = Drawing.new('Triangle')
@@ -1870,7 +1787,6 @@ function Library:CreateWindow(...)
         end
     end
 
-    -- mobile toggle button (floating)
     if IsMobile then
         local FBtn = Library:Create('TextButton', {
             AnchorPoint      = Vector2.new(1, 0);
@@ -1888,15 +1804,13 @@ function Library:CreateWindow(...)
         Library:Create('UICorner', { CornerRadius=UDim.new(0, S(10)); Parent=FBtn })
         Library:AddToRegistry(FBtn, { BackgroundColor3='AccentColor' })
         FBtn.MouseButton1Click:Connect(function() task.spawn(Library.Toggle) end)
-        -- swipe-to-close: touch anywhere outside window
         Library:GiveSignal(InputService.InputBegan:Connect(function(Input)
             if Input.UserInputType ~= Enum.UserInputType.Touch then return end
             if not Outer.Visible then return end
-            task.wait() -- let inner frames handle first
+            task.wait()
             local x, y = Input.Position.X, Input.Position.Y
             local ap, as = Outer.AbsolutePosition, Outer.AbsoluteSize
             if x < ap.X or x > ap.X+as.X or y < ap.Y or y > ap.Y+as.Y then
-                -- only close if no opened frame is consuming the touch
                 if not Library:MouseIsOverOpenedFrame() then
                     Library.Toggle()
                 end
@@ -1920,7 +1834,6 @@ function Library:CreateWindow(...)
     return Window
 end
 
--- player list refresh
 local function OnPlayerChange()
     local list = GetPlayersString()
     for _, v in next, Options do
