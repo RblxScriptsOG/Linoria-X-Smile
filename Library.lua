@@ -144,6 +144,7 @@ function Library:MouseIsOverOpenedFrame()
             return true
         end
     end
+    return false
 end
 
 function Library:IsMouseOverFrame(Frame)
@@ -227,35 +228,49 @@ Library:GiveSignal(ScreenGui.DescendantRemoving:Connect(function(inst)
     if Library.RegistryMap[inst] then Library:RemoveFromRegistry(inst) end
 end))
 
+-- FIXED DRAGGING SYSTEM
 function Library:MakeDraggable(Frame, Cutoff)
     local cutY = Cutoff or S(40)
     Frame.Active = true
 
+    local dragging = false
+    local dragInput = nil
+    local dragStart = nil
+    local startPos = nil
+
     Frame.InputBegan:Connect(function(Input)
         if not Library:IsPointerInput(Input) then return end
-        local ox = Input.Position.X - Frame.AbsolutePosition.X
-        local oy = Input.Position.Y - Frame.AbsolutePosition.Y
-        if oy > cutY then return end
+        
+        local inputY = Input.Position.Y - Frame.AbsolutePosition.Y
+        if inputY > cutY then return end
 
-        local startFramePos = Frame.Position
-        local startInputPos = Input.Position
+        dragging = true
+        dragStart = Input.Position
+        startPos = Frame.Position
+    end)
 
-        if IsMobile then
-            Input.Changed:Connect(function()
-                if Input.UserInputState ~= Enum.UserInputState.Change then return end
-                Frame.Position = UDim2.new(
-                    0, startFramePos.X.Offset + (Input.Position.X - startInputPos.X) + Frame.Size.X.Offset * Frame.AnchorPoint.X,
-                    0, startFramePos.Y.Offset + (Input.Position.Y - startInputPos.Y) + Frame.Size.Y.Offset * Frame.AnchorPoint.Y
-                )
-            end)
-        else
-            while InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
-                Frame.Position = UDim2.new(
-                    0, Mouse.X - ox + Frame.Size.X.Offset * Frame.AnchorPoint.X,
-                    0, Mouse.Y - oy + Frame.Size.Y.Offset * Frame.AnchorPoint.Y
-                )
-                RenderStepped:Wait()
-            end
+    Frame.InputChanged:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = Input
+        end
+    end)
+
+    InputService.InputChanged:Connect(function(Input)
+        if Input == dragInput and dragging then
+            local delta = Input.Position - dragStart
+            Frame.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+
+    InputService.InputEnded:Connect(function(Input)
+        if Library:IsPointerInput(Input) then
+            dragging = false
+            dragInput = nil
         end
     end)
 end
@@ -330,23 +345,33 @@ function Library:OnHighlight(HoverInst, TargetInst, OnProps, OffProps)
     end
 end
 
+-- FIXED DRAG HANDLER FOR SLIDERS/COLOR PICKERS
 local function HandleDrag(Frame, onMove, onEnd)
+    local dragging = false
+    local dragInput = nil
+
     Frame.InputBegan:Connect(function(Input)
         if not Library:IsPointerInput(Input) then return end
-        if IsMobile then
-            Input.Changed:Connect(function()
-                if Input.UserInputState == Enum.UserInputState.Change then
-                    onMove(Input.Position.X, Input.Position.Y)
-                elseif Input.UserInputState == Enum.UserInputState.End then
-                    if onEnd then onEnd() end
-                end
-            end)
+        dragging = true
+        onMove(Input.Position.X, Input.Position.Y)
+    end)
+
+    Frame.InputChanged:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = Input
+        end
+    end)
+
+    InputService.InputChanged:Connect(function(Input)
+        if dragging and Input == dragInput then
             onMove(Input.Position.X, Input.Position.Y)
-        else
-            while InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
-                onMove(Mouse.X, Mouse.Y)
-                RenderStepped:Wait()
-            end
+        end
+    end)
+
+    InputService.InputEnded:Connect(function(Input)
+        if Library:IsPointerInput(Input) and dragging then
+            dragging = false
+            dragInput = nil
             if onEnd then onEnd() end
         end
     end)
@@ -922,8 +947,8 @@ do
         local GB = self
 
         local function MakeBtn(b)
-            local o = Library:Create('Frame', { BorderColor3=Color3.new(0,0,0); Size=UDim2.new(1,-S(4),0,S(IsMobile and 26 or 20)); ZIndex=5 })
-            local i = Library:Create('Frame', { BackgroundColor3=Library.MainColor; BorderColor3=Library.OutlineColor; BorderMode=Enum.BorderMode.Inset; Size=UDim2.new(1,0,1,0); ZIndex=6; Parent=o })
+            local o = Library:Create('Frame', { BorderColor3=Color3.new(0,0,0); Size = UDim2.new(1,-S(4),0,S(IsMobile and 26 or 20)); ZIndex=5 })
+            local i = Library:Create('Frame', { BackgroundColor3=Library.MainColor; BorderColor3=Library.OutlineColor; BorderMode=Enum.BorderMode.Inset; Size = UDim2.new(1,0,1,0); ZIndex=6; Parent=o })
             local l = Library:CreateLabel({ Size=UDim2.new(1,0,1,0); TextSize=S(14); Text=b.Text; ZIndex=6; Parent=i })
             Library:Create('UIGradient', { Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.fromRGB(212,212,212))}); Rotation=90; Parent=i })
             Library:AddToRegistry(o, { BorderColor3='Black' })
