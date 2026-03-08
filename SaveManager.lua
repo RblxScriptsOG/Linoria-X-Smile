@@ -136,17 +136,22 @@ local SaveManager = {} do
 	end
 
 	function SaveManager:RefreshConfigList()
-		local list = listfiles('Smile Hub/Rivals/settings')
-		local out  = {}
+		local folder = 'Smile Hub/Rivals/settings'
+		if not isfolder(folder) then return {} end
+		
+		local list = listfiles(folder)
+		local out = {}
+		
 		for _, file in ipairs(list) do
-			if file:sub(-5) == '.json' then
-				local pos   = file:find('.json', 1, true)
-				local start = pos
-				local char  = file:sub(pos, pos)
-				while char ~= '/' and char ~= '\\' and char ~= '' do pos = pos - 1; char = file:sub(pos, pos) end
-				if char == '/' or char == '\\' then table.insert(out, file:sub(pos + 1, start - 1)) end
+			if type(file) == 'string' and file:sub(-5) == '.json' then
+				-- Extract filename using pattern (handles both / and \ separators)
+				local name = file:match("([^/\\]+)%.json$")
+				if name and name ~= "" then
+					table.insert(out, name)
+				end
 			end
 		end
+		
 		return out
 	end
 
@@ -221,17 +226,22 @@ local SaveManager = {} do
 	end
 
 	function SaveManager:RefreshUnlockAllList()
-		local list = listfiles('Smile Hub/Rivals/UnlockAll')
-		local out  = {}
+		local folder = 'Smile Hub/Rivals/UnlockAll'
+		if not isfolder(folder) then return {} end
+		
+		local list = listfiles(folder)
+		local out = {}
+		
 		for _, file in ipairs(list) do
-			if file:sub(-5) == '.json' then
-				local pos   = file:find('.json', 1, true)
-				local start = pos
-				local char  = file:sub(pos, pos)
-				while char ~= '/' and char ~= '\\' and char ~= '' do pos = pos - 1; char = file:sub(pos, pos) end
-				if char == '/' or char == '\\' then table.insert(out, file:sub(pos + 1, start - 1)) end
+			if type(file) == 'string' and file:sub(-5) == '.json' then
+				-- Extract filename using pattern (handles both / and \ separators)
+				local name = file:match("([^/\\]+)%.json$")
+				if name and name ~= "" then
+					table.insert(out, name)
+				end
 			end
 		end
+		
 		return out
 	end
 
